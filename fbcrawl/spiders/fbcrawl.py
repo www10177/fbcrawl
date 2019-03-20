@@ -4,7 +4,15 @@ import logging
 from scrapy.loader import ItemLoader
 from scrapy.http import FormRequest
 from fbcrawl.items import FbcrawlItem
+import json
 
+def page_formatter(url):
+    if url.find('https://www.facebook.com/') != -1:
+        return url[25:]
+    elif url.find('https://mbasic.facebook.com/') != -1:
+        return url[28:]
+    elif url.find('https://m.facebook.com/') != -1:
+        return url[23:]
 class FacebookSpider(scrapy.Spider):
     """
     Parse FB pages (needs credentials)
@@ -23,27 +31,19 @@ class FacebookSpider(scrapy.Spider):
         super().__init__(*args,**kwargs)
         
         #email & pass need to be passed as attributes!
-        if 'email' not in kwargs or 'password' not in kwargs:
-            raise AttributeError('You need to provide valid email and password:\n'
-                                 'scrapy fb -a email="EMAIL" -a password="PASSWORD"')
-        else:
-            self.logger.info('Email and password provided, using these as credentials')
+      #  if 'email' not in kwargs or 'password' not in kwargs:
+      #      raise AttributeError('You need to provide valid email and password:\n'
+      #                           'scrapy fb -a email="EMAIL" -a password="PASSWORD"')
+      #  else:
+      #      self.logger.info('Email and password provided, using these as credentials')
 
         #page name parsing (added support for full urls)
         if 'page' not in kwargs:
-            raise AttributeError('You need to provide a valid page name to crawl!'
-                                 'scrapy fb -a page="PAGENAME"')
-        elif self.page.find('https://www.facebook.com/') != -1:
-            self.page = self.page[25:]
-            self.logger.info('Page attribute provided, scraping "{}"'.format(self.page))
-        elif self.page.find('https://mbasic.facebook.com/') != -1:
-            self.page = self.page[28:]
-            self.logger.info('Page attribute provided, scraping "{}"'.format(self.page))
-        elif self.page.find('https://m.facebook.com/') != -1:
-            self.page = self.page[23:]
-            self.logger.info('Page attribute provided, scraping "{}"'.format(self.page))
-        else:
-            self.logger.info('Page attribute provided, scraping "{}"'.format(self.page))
+            raise AttributeError('You need to provide a valid page list to crawl!'
+                                 'scrapy fb -a page="PAGELISTFILENAME"')
+        with open(self.page) as f:
+            self.pages = [page_formatter(i) for i in f.read().splitlines()]
+
         
         #parse year
         if 'year' not in kwargs:
@@ -75,11 +75,8 @@ class FacebookSpider(scrapy.Spider):
         self.count = 0
         
         self.start_urls = ['https://mbasic.facebook.com']    
-
     def parse(self, response):
-        '''
-        Handle login with provided credentials
-        '''
+        #Handle login with provided credentials
         return FormRequest.from_response(
                 response,
                 formxpath='//form[contains(@action, "login")]',
@@ -91,8 +88,6 @@ class FacebookSpider(scrapy.Spider):
         '''
         This method has multiple purposes:
         1) Handle failed logins due to facebook 'save-device' redirection
-        2) Set language interface, if not already provided
-        3) Navigate to given page 
         '''
         #handle 'save-device' redirection
         if response.xpath("//div/a[contains(@href,'save-device')]"):
@@ -101,35 +96,24 @@ class FacebookSpider(scrapy.Spider):
             return FormRequest.from_response(
                 response,
                 formdata={'name_action_selected': 'dont_save'},
-                callback=self.parse_home
+                callback=self.parse_pagelist
                 )
+        else :
+            print('Did not Enter Save-Device Redirection, Need to be fix')
+
+    def parse_pagelist(self, response):
+        '''
+        This method has multiple purposes:
+        3) Navigate to given page 
+        '''
             
-        #set language interface
-        if self.lang == '_':
-            if response.xpath("//input[@placeholder='Search Facebook']"):
-                self.logger.info('Language recognized: lang="en"')
-                self.lang = 'en'
-            elif response.xpath("//input[@placeholder='Buscar en Facebook']"):
-                self.logger.info('Language recognized: lang="es"')
-                self.lang = 'es'
-            elif response.xpath("//input[@placeholder='Rechercher sur Facebook']"):
-                self.logger.info('Language recognized: lang="fr"')
-                self.lang = 'fr'
-            elif response.xpath("//input[@placeholder='Cerca su Facebook']"):
-                self.logger.info('Language recognized: lang="it"')
-                self.lang = 'it'
-            elif response.xpath("//input[@placeholder='Pesquisa no Facebook']"):
-                self.logger.info('Language recognized: lang="pt"')
-                self.lang = 'pt'
-            else:
-                raise AttributeError('Language not recognized\n'
-                                     'Change your interface lang from facebook ' 
-                                     'and try again')
-                                                                 
         #navigate to provided page
-        href = response.urljoin(self.page)
-        self.logger.info('Scraping facebook page {}'.format(href))
-        return scrapy.Request(url=href,callback=self.parse_page,meta={'index':1})
+        for n,page in enumerate(self.pages):
+            href = response.urljoin(page)
+            print(page)
+            self.logger.info('page %d of %d ' %(n,len(self.pages)))
+            self.logger.info('Scraping facebook page {}'.format(href))
+            yield scrapy.Request(url=href,priority=len(self.pages)-n,callback=self.parse_page,meta={'index':1})
 
     def parse_page(self, response):
         '''

@@ -32,7 +32,7 @@ class CommentsSpider(FacebookSpider):
             source = reply.xpath('.//h3/a/text()').extract()
             answer = reply.xpath('.//a[contains(@href,"repl")]/@href').extract()
             ans = response.urljoin(answer[::-1][0])
-            self.logger.info('{} nested comment @ page {}'.format(str(response.meta['index']),ans))
+            #self.logger.info('{} nested comment @ page {}'.format(str(response.meta['index']),ans))
             yield scrapy.Request(ans,
                                  callback=self.parse_reply,
                                  meta={'reply_to':source,
@@ -93,7 +93,7 @@ class CommentsSpider(FacebookSpider):
                 
             back = response.xpath('//div[contains(@id,"comment_replies_more_1")]/a/@href').extract()
             if back:
-                self.logger.info('Back found, more nested comments')
+                #self.logger.info('Back found, more nested comments')
                 back_page = response.urljoin(back[0])
                 yield scrapy.Request(back_page, 
                                      callback=self.parse_reply,
@@ -123,7 +123,7 @@ class CommentsSpider(FacebookSpider):
                 yield new.load_item()
             #keep going backwards
             back = response.xpath('//div[contains(@id,"comment_replies_more_1")]/a/@href').extract()
-            self.logger.info('Back found, more nested comments')
+            #self.logger.info('Back found, more nested comments')
             if back:
                 back_page = response.urljoin(back[0])
                 yield scrapy.Request(back_page, 
@@ -135,7 +135,7 @@ class CommentsSpider(FacebookSpider):
                                            'index':response.meta['index']})
             else:
                 next_reply = response.meta['url']
-                self.logger.info('Nested comments crawl finished, heading to home page: {}'.format(response.meta['url']))
+                #self.logger.info('Nested comments crawl finished, heading to home page: {}'.format(response.meta['url']))
                 yield scrapy.Request(next_reply,
                                      callback=self.parse_page,
                                      meta={'index':response.meta['index']+1})
