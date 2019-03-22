@@ -38,10 +38,7 @@ class FacebookSpider(scrapy.Spider):
       #      self.logger.info('Email and password provided, using these as credentials')
 
         #page name parsing (added support for full urls)
-        if 'page' not in kwargs:
-            raise AttributeError('You need to provide a valid page list to crawl!'
-                                 'scrapy fb -a page="PAGELISTFILENAME"')
-        with open(self.page) as f:
+        with open(self.pagelist) as f:
             self.pages = [page_formatter(i) for i in f.read().splitlines()]
 
         

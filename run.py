@@ -4,8 +4,8 @@ import pandas as pd
 import sqlite3
 import os 
 # Config 
-email= 'YOUR_FACEBOOK_EMAIL'
-password= 'YOUR_FACEBOOK_PASSWORD'
+email= 'www10177@gmail.com'
+password= 'u9Vd53SCX5'
 year= 2008
 lang= 'it'
 
@@ -29,15 +29,21 @@ def crawl_comments():
 def crawl_batch_pages():
     url ='./pagelist'
     name ='test'
-    call(['python3', '-m', 'scrapy', 'crawl', 'fb', '-a',  '-a','email=%s'%email,'-a','password=%s'%password,'-a', 'page=%s'%url, '-a', 'year=%d'year, '-a', 'lang=%s'%lang, '-o', './result/%s.csv'%name])
+    call(['python3', '-m', 'scrapy', 'crawl', 'fb', '-a',  '-a','email=%s'%email,'-a','password=%s'%password,'-a', 'page=%s'%url, '-a', 'year=%d' %year, '-a', 'lang=%s'%lang, '-o', './result/%s.csv'%name])
 
 def crawl_batch_comments():
     post_list_dir= './comment_urls/'
     for url_filename in tqdm([i for i  in os.listdir(post_list_dir) if i.endswith('.txt')]):
         url = post_list_dir +url_filename 
         name =url_filename
-        call(['python3', '-m', 'scrapy', 'crawl', 'comments', '-a', 'email=%s'%email, '-a' ,'password=%s'%password, '-a', 'page=%s'%url,'-a','lang=%s'%lang,'-o', './comments/%s.csv'%name])
+        call(['python3', '-m', 'scrapy', 'crawl', 'comments', '-a', 'email=%s'%email, '-a' ,'password=%s'%password, '-a', 'pagelist=%s'%url,'-a','lang=%s'%lang,'-o', './comments/%s.csv'%name])
 
+def crawl_batch_reactions():
+    post_list_dir= './reactions_urls/'
+    for url_filename in tqdm([i for i  in os.listdir(post_list_dir) if i.endswith('.txt')]):
+        url = post_list_dir +url_filename 
+        name =url_filename
+        call(['python3', '-m', 'scrapy', 'crawl', 'reactions', '-a', 'email=%s'%email, '-a' ,'password=%s'%password, '-a', 'pagelist=%s'%url,'-a','lang=%s'%lang,'-o', './reactions/%s.csv'%name])
 
 if __name__ == '__main__':
-    crawl_batch_comments()
+    crawl_batch_reactions()

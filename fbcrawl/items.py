@@ -515,3 +515,29 @@ class CommentsItem(scrapy.Item):
     share = scrapy.Field()                      # num of shares
     url = scrapy.Field()
     shared_from = scrapy.Field()
+def ParseReaction(string,loader_context):
+    #parse reaction text to english( only support Italian now)
+    newstring=string[0]
+    if newstring == 'Mi piace':
+        return 'Likes'
+    elif newstring == 'Love':
+        return newstring
+    elif newstring == 'Ahah':
+        return newstring
+    elif newstring == 'Wow':
+        return newstring
+    elif newstring == 'Grrr':
+        return newstring
+    elif newstring == 'Sigh':
+        return newstring
+    else :
+        print("Parse Reactions Error")
+        print(newstring)
+        return(newstring)
+class ReactionItem(scrapy.Item):
+    source =scrapy.Field()
+    reaction_to=scrapy.Field()
+    reaction=scrapy.Field(
+            output_processor=ParseReaction
+    )
+    profile=scrapy.Field()
